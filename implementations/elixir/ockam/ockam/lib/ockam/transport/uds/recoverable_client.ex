@@ -7,13 +7,12 @@ defmodule Ockam.Transport.UDS.RecoverableClient do
 
   Options:
 
-  `desination` - Ockam.Transport.UDSAddress or {host, port} tuple to connect to
+  `desination` - Ockam.Transport.UDSAddress to connect to
   `refresh_timeout` - time to wait between client restarts
   """
   use Ockam.AsymmetricWorker
 
   alias Ockam.Transport.UDS.Client
-  alias Ockam.Transport.UDSAddress
 
   alias Ockam.Message
   alias Ockam.Router
@@ -25,14 +24,12 @@ defmodule Ockam.Transport.UDS.RecoverableClient do
 
   @impl true
   def inner_setup(options, state) do
-    destination_opt = Keyword.fetch!(options, :destination)
+    destination = Keyword.fetch!(options, :destination)
     refresh_timeout = Keyword.get(options, :refresh_timeout, 5_000)
 
-    with {:ok, destination} <- make_destination(destination_opt) do
-      state = Map.merge(state, %{destination: destination, refresh_timeout: refresh_timeout})
+    state = Map.merge(state, %{destination: destination, refresh_timeout: refresh_timeout})
 
-      {:ok, refresh_client(state)}
-    end
+    {:ok, refresh_client(state)}
   end
 
   @impl true
@@ -138,11 +135,4 @@ defmodule Ockam.Transport.UDS.RecoverableClient do
     Map.put(state, :refresh_timer, timer_ref)
   end
 
-  defp make_destination({_host, _port} = destination) do
-    {:ok, destination}
-  end
-
-  defp make_destination(address) do
-    UDSAddress.to_host_port(address)
-  end
 end

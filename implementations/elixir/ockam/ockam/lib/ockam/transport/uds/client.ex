@@ -13,25 +13,12 @@ defmodule Ockam.Transport.UDS.Client do
 
   @impl true
   def setup(options, state) do
-    {host, port} = Keyword.fetch!(options, :destination)
+    socket_name = Keyword.fetch!(options, :destination)
     heartbeat = Keyword.get(options, :heartbeat)
 
-    {protocol, inet_address} =
-      case host do
-        string when is_binary(string) ->
-          {:inet, to_charlist(string)}
-
-        ipv4 when is_tuple(ipv4) and tuple_size(ipv4) == 4 ->
-          {:inet, ipv4}
-
-        ipv6 when is_tuple(ipv6) and tuple_size(ipv6) == 8 ->
-          {:inet6, ipv6}
-      end
-
     # TODO: connect/3 and controlling_process/2 should be in a callback.
-    case :gen_tcp.connect(inet_address, port, [
+    case :gen_tcp.connect({:local, socket_name}, 0, [
            :binary,
-           protocol,
            active: true,
            packet: 2,
            nodelay: true
@@ -42,8 +29,7 @@ defmodule Ockam.Transport.UDS.Client do
         state =
           Map.merge(state, %{
             socket: socket,
-            inet_address: inet_address,
-            port: port,
+            socket_name: socket_name,
             heartbeat: heartbeat
           })
 

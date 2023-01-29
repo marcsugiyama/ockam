@@ -31,10 +31,8 @@ defmodule Ockam.Transport.UDS do
     case Keyword.fetch(options, :listen) do
       {:ok, listen} ->
         if Code.ensure_loaded(:ranch) do
-          ip = Keyword.get(listen, :ip, Listener.default_ip())
-          port = Keyword.get(listen, :port, Listener.default_port())
-
-          "UDS_LISTENER_#{UDSAddress.format_host_port(ip, port)}"
+          socket_name = Keyword.get(listen, :socket_name, Listener.default_socket_name())
+          "UDS_LISTENER_#{socket_name}"
         else
           "UDS_TRANSPORT"
         end
@@ -89,46 +87,25 @@ defmodule Ockam.Transport.UDS do
 
   @spec handle_transport_message(Ockam.Message.t(), Keyword.t()) :: :ok | {:error, any()}
   def handle_transport_message(message, client_options) do
-    case get_destination(message) do
-      {:ok, destination} ->
-        case Client.create([
-               {:destination, destination},
-               {:restart_type, :temporary} | client_options
-             ]) do
-          {:ok, client_address} ->
-            [_tcp_address | onward_route] = Message.onward_route(message)
-            Router.route(Message.set_onward_route(message, [client_address | onward_route]))
+    [destination | _onward_route] = Message.onward_route(message)
+    case Client.create([
+           {:destination, destination},
+           {:restart_type, :temporary} | client_options
+         ]) do
+      {:ok, client_address} ->
+        [_socket_name | onward_route] = Message.onward_route(message)
+        Router.route(Message.set_onward_route(message, [client_address | onward_route]))
 
-          {:error, {:worker_init, _worker, reason}} ->
-            {:error, reason}
+      {:error, {:worker_init, _worker, reason}} ->
+        {:error, reason}
 
-          {:error, reason} ->
-            {:error, reason}
-        end
-
-      e ->
-        Logger.error(
-          "Cannot forward message to tcp client: #{inspect(message)} reason: #{inspect(e)}"
-        )
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
   def implicit_connections_disabled(_message) do
-    {:error, {:tcp_transport, :implicit_connections_disabled}}
+    {:error, {:uds_transport, :implicit_connections_disabled}}
   end
 
-  defp get_destination(message) do
-    [dest_address | _onward_route] = Message.onward_route(message)
-
-    with true <- UDSAddress.is_tcp_address(dest_address),
-         {:ok, destination} <- UDSAddress.to_host_port(dest_address) do
-      {:ok, destination}
-    else
-      false ->
-        {:error, {:invalid_address_type, dest_address}}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
 end

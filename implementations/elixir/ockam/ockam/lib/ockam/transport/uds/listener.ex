@@ -12,8 +12,7 @@ if Code.ensure_loaded?(:ranch) do
 
     @typedoc """
     UDS listener options
-    - ip: t::inet.ip_address() - IP address to listen on
-    - port: t:integer() - port to listen on
+    - socket_name: t::String.t() - Unix Domain Socket file name
     """
     @type options :: Keyword.t()
 
@@ -24,14 +23,13 @@ if Code.ensure_loaded?(:ranch) do
     @doc false
     @impl true
     def init(options) do
-      ip = Keyword.get_lazy(options, :ip, &default_ip/0)
-      port = Keyword.get_lazy(options, :port, &default_port/0)
+      socket_name = Keyword.get_lazy(options, :socket_name, &default_socket_name/0)
 
       handler_options = Keyword.get(options, :handler_options, [])
 
       ref = make_ref()
       transport = :ranch_tcp
-      transport_options = [port: port, ip: ip]
+      transport_options = [ifaddr: {:local, socket_name}]
       protocol = Ockam.Transport.UDS.Handler
       protocol_options = [packet: 2, nodelay: true, handler_options: handler_options]
 
@@ -52,7 +50,6 @@ if Code.ensure_loaded?(:ranch) do
       end
     end
 
-    def default_ip, do: {0, 0, 0, 0}
-    def default_port, do: 4000
+    def default_socket_name, do: "/tmp/ockam"
   end
 end
