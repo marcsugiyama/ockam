@@ -4,6 +4,7 @@ defmodule Ockam.Transport.UDS.Client do
 
   alias Ockam.Message
   alias Ockam.Transport.UDS
+  alias Ockam.Transport.UDSAddress
   alias Ockam.Wire
 
   require Logger
@@ -13,7 +14,7 @@ defmodule Ockam.Transport.UDS.Client do
 
   @impl true
   def setup(options, state) do
-    socket_name = Keyword.fetch!(options, :destination)
+    socket_name = UDSAddress.socket_name(Keyword.fetch!(options, :destination))
     heartbeat = Keyword.get(options, :heartbeat)
 
     # TODO: connect/3 and controlling_process/2 should be in a callback.

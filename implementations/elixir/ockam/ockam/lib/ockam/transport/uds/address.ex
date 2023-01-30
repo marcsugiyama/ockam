@@ -18,4 +18,8 @@ defmodule Ockam.Transport.UDSAddress do
   def is_uds_address(address) do
     Address.type(address) == @address_type
   end
+
+  def socket_name(address) do
+    Address.value(address)
+  end
 end
