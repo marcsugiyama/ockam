@@ -11,4 +11,4 @@
 Ockam.SecureChannel.create_listener(vault: vault, identity_keypair: identity, address: "secure_channel_listener")
 
 # Start the UDS Transport Add-on for Ockam Routing and a UDS listener on port 4000.
-Ockam.Transport.UDS.start(listen: [port: 4000])
+Ockam.Transport.UDS.start(listen: [socket_name: "/tmp/06-ockam"])

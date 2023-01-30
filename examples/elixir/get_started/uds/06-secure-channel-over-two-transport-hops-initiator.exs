@@ -12,7 +12,7 @@ Ockam.Transport.UDS.start()
 
 # Connect to a secure channel listener and perform a handshake.
 alias Ockam.Transport.UDSAddress
-r = [UDSAddress.new("localhost", 3000), "h1", UDSAddress.new("localhost", 4000), "secure_channel_listener"]
+r = [UDSAddress.new("/tmp/06-ockam-middle"), "h1", UDSAddress.new("/tmp/06-ockam"), "secure_channel_listener"]
 {:ok, c} = Ockam.SecureChannel.create(route: r, vault: vault, identity_keypair: identity)
 
 # Prepare the message.
